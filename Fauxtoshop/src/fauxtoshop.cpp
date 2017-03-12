@@ -25,11 +25,12 @@ bool     openImageFromFilename(GBufferedImage& img, string filename);
 bool 	 saveImageToFilename(const GBufferedImage &img, string filename);
 void     getMouseClickLocation(int &row, int &col);
 Vector<double> gaussKernelForRadius(int radius);
-bool loadImageFile(GBufferedImage &img);
+bool loadImageFile(GBufferedImage &img, bool emptyToExit);
 int filterChoice(int lower, int upper);
 int scatter(Grid<int> &grid, int &r, int &c, int &radius);
 void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f);
 int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold);
+int greenScreen(Grid<int> &oldG, Grid<int> &newG, int &r, int &c, int&y, int&x, int &threshold);
 
 
 
@@ -63,7 +64,7 @@ void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
     gw.add(&img,0,0);
     bool loop = true;
     while (loop) {
-        if (!loadImageFile(img)) {
+        if (!loadImageFile(img, true)) {
             loop = false;
             continue;
         }
@@ -71,7 +72,8 @@ void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
         cout << "Which image filter would you like to apply?"<< endl;
         cout << "\t1: Scatter" << endl;
         cout << "\t2: Edge Detection" << endl;
-        int choice = filterChoice(1, 2);
+        cout << "\t3: Green Screen" << endl;
+        int choice = filterChoice(1, 3);
         Grid<int> grid = img.toGrid();
         if (choice == 1) {
             int radius = -1;
@@ -86,6 +88,19 @@ void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
                 thresh = getInteger("What is your threshold?");
             auto lambda =[&thresh] (Grid<int> g, int r, int c) { return edgeDetection(g, r, c, thresh); };
             cout << "Applying edge detection..." << endl;
+            applyFunc(grid, lambda);
+        } else if (choice == 3) {
+            GBufferedImage img2;
+            loadImageFile(img2, false);
+            Grid<int> grid2 = img2.toGrid();
+            int thresh = -1;
+            while (thresh < 0)
+                thresh = getInteger("What is your threshold?");
+            cout << "Click where you would like to place the image" << endl;
+            int row, col;
+            getMouseClickLocation(row, col);
+            auto lambda =[&thresh, &grid2, &row, &col] (Grid<int> g, int r, int c) { return greenScreen(g, grid2, r, c, row, col, thresh); };
+            cout << "Placing image..." << endl;
             applyFunc(grid, lambda);
         }
         cout << "Operation complete." << endl << endl;
@@ -102,11 +117,13 @@ void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
     gw.close();
 }
 
-bool loadImageFile(GBufferedImage &img) {
+bool loadImageFile(GBufferedImage &img, bool emptyToExit) {
     bool success = false;
     while (!success) {
-        string fn = getLine("Which file would you like to open? [Blank to exit]");
-        if (fn.empty())
+        string prompt = "Enter a filename:";
+        if (emptyToExit) prompt = prompt + " [Blank to exit]";
+        string fn = getLine(prompt);
+        if (emptyToExit && fn.empty())
             return false;
         success = openImageFromFilename(img, fn + ".jpg");
         if (!success)
@@ -115,7 +132,7 @@ bool loadImageFile(GBufferedImage &img) {
     return true;
 }
 
-bool inBounds(Grid<int> &img, int &r, int &c) {
+bool inBounds(Grid<int> &img, int r, int c) {
     if (r < 0 || c < 0)
         return false;
     if (r >= img.numRows() || c >= img.numCols())
@@ -151,6 +168,15 @@ int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold) {
         }
     }
     return newPixel;
+}
+
+int greenScreen(Grid<int> &oldG, Grid<int> &newG, int &r, int &c, int&y, int&x, int &threshold) {
+    int pixel = oldG[r][c];
+    if (!inBounds(newG, r-y, c-x)) return pixel;
+    int newPixel = newG[r-y][c-x];
+    if (difference(newPixel, GREEN) >= threshold)
+        return newPixel;
+    return pixel;
 }
 
 void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f) {
