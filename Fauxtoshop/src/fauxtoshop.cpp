@@ -10,6 +10,7 @@
 #include "strlib.h"
 #include "gbufferedimage.h"
 #include "gevents.h"
+#include "functional"
 #include "math.h" //for sqrt and exp in the optional Gaussian kernel
 #include "gmath.h" // for sinDegrees(), cosDegrees(), PI
 using namespace std;
@@ -43,6 +44,62 @@ int main() {
     return 0;
 }
 
+bool loadImageFile(GBufferedImage &img) {
+    bool success = false;
+    while (!success) {
+        string fn = getLine("Which file would you like to open? [Blank to exit]");
+        if (fn.empty())
+            return false;
+        success = openImageFromFilename(img, fn + ".jpg");
+        if (!success)
+            cout << "Invalid filename entered. Try again." << endl;
+    }
+    return true;
+}
+
+bool inBounds(Grid<int> &img, int &r, int &c) {
+    if (r < 0 || c < 0)
+        return false;
+    if (r >= img.numRows() || c >= img.numCols())
+        return false;
+    return true;
+}
+
+int scatter(Grid<int> &grid, int &r, int &c, int &radius) {
+    int y = randomInteger(max(r-radius,0), min(r+radius, grid.numRows()-1));
+    int x = randomInteger(max(c-radius,0), min(c+radius, grid.numCols()-1));
+    return grid[y][x];
+}
+
+void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f) {
+    Grid<int> newImage = Grid<int>(grid.numRows(), grid.numCols());
+    for (int r = 0; r < grid.numRows(); r++) {
+        for (int c = 0; c < grid.numCols(); c++) {
+            newImage[r][c] = f(grid, r, c);
+        }
+    }
+    grid = newImage;
+}
+
+
+bool validChoice(int &choice, int& lower, int& upper) {
+    if (choice < lower)
+        return false;
+    if (choice > upper)
+        return false;
+    return true;
+}
+
+int filterChoice(int lower, int upper) {
+    int choice = -1;
+    while (!validChoice(choice, lower, upper)) {
+        choice = getInteger();
+        if (!validChoice(choice, lower, upper))
+            cout << "Please enter a valid option" << endl;
+    }
+    return choice;
+}
+
 /* This is yours to edit. Depending on how you approach your problem
  * decomposition, you will want to rewrite some of these lines, move
  * them inside loops, or move them inside helper functions, etc.
@@ -52,18 +109,39 @@ int main() {
 void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
 
     cout << "Welcome to Fauxtoshop!" << endl;
-    openImageFromFilename(img, "kitten.jpg");
-    gw.setCanvasSize(img.getWidth(), img.getHeight());
     gw.add(&img,0,0);
+    bool loop = true;
+    while (loop) {
+        if (!loadImageFile(img)) {
+            loop = false;
+            continue;
+        }
+        gw.setCanvasSize(img.getWidth(), img.getHeight());
+        cout << "Which image filter would you like to apply?"<< endl;
+        cout << "\t1: Scatter" << endl;
+        cout << "\t1: Edge Detection" << endl;
+        int choice = filterChoice(1, 2);
+        Grid<int> grid = img.toGrid();
+        if (choice == 1) {
+            int radius = -1;
+            while (radius < 1 || radius > 100)
+                radius = getInteger("What is your scatter radius? [1-100]");
+            auto lambda =[&radius] (Grid<int> g, int r, int c) { return scatter(g, r, c, radius); };
+            cout << "Applying scatter..." << endl;
+            applyFunc(grid, lambda);
+            img.fromGrid(grid);
+        }
+        cout << "Operation complete." << endl << endl;
+    }
+        //    GBufferedImage img2;
+//    openImageFromFilename(img2, "beyonce.jpg");
+//    img.countDiffPixels(img2);
 
-
-    GBufferedImage img2;
-    openImageFromFilename(img2, "beyonce.jpg");
-    img.countDiffPixels(img2);
-
-    int row, col;
-    getMouseClickLocation(row, col);
-    gw.clear();
+//    int row, col;
+//    getMouseClickLocation(row, col);
+//    gw.clear();
+    cout << "Exiting" << endl;
+    gw.close();
 }
 
 
