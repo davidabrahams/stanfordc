@@ -25,6 +25,13 @@ bool     openImageFromFilename(GBufferedImage& img, string filename);
 bool 	 saveImageToFilename(const GBufferedImage &img, string filename);
 void     getMouseClickLocation(int &row, int &col);
 Vector<double> gaussKernelForRadius(int radius);
+bool loadImageFile(GBufferedImage &img);
+int filterChoice(int lower, int upper);
+int scatter(Grid<int> &grid, int &r, int &c, int &radius);
+void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f);
+int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold);
+
+
 
 /* STARTER CODE FUNCTION - DO NOT EDIT
  *
@@ -42,6 +49,57 @@ int main() {
     GBufferedImage img;
     doFauxtoshop(gw, img);
     return 0;
+}
+
+/* This is yours to edit. Depending on how you approach your problem
+ * decomposition, you will want to rewrite some of these lines, move
+ * them inside loops, or move them inside helper functions, etc.
+ *
+ * TODO: rewrite this comment.
+ */
+void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
+
+    cout << "Welcome to Fauxtoshop!" << endl;
+    gw.add(&img,0,0);
+    bool loop = true;
+    while (loop) {
+        if (!loadImageFile(img)) {
+            loop = false;
+            continue;
+        }
+        gw.setCanvasSize(img.getWidth(), img.getHeight());
+        cout << "Which image filter would you like to apply?"<< endl;
+        cout << "\t1: Scatter" << endl;
+        cout << "\t2: Edge Detection" << endl;
+        int choice = filterChoice(1, 2);
+        Grid<int> grid = img.toGrid();
+        if (choice == 1) {
+            int radius = -1;
+            while (radius < 1 || radius > 100)
+                radius = getInteger("What is your scatter radius? [1-100]");
+            auto lambda =[&radius] (Grid<int> g, int r, int c) { return scatter(g, r, c, radius); };
+            cout << "Applying scatter..." << endl;
+            applyFunc(grid, lambda);
+        } else if (choice == 2) {
+            int thresh = -1;
+            while (thresh < 0)
+                thresh = getInteger("What is your threshold?");
+            auto lambda =[&thresh] (Grid<int> g, int r, int c) { return edgeDetection(g, r, c, thresh); };
+            cout << "Applying edge detection..." << endl;
+            applyFunc(grid, lambda);
+        }
+        cout << "Operation complete." << endl << endl;
+        img.fromGrid(grid);
+    }
+    //    GBufferedImage img2;
+    //    openImageFromFilename(img2, "beyonce.jpg");
+    //    img.countDiffPixels(img2);
+
+    //    int row, col;
+    //    getMouseClickLocation(row, col);
+    //    gw.clear();
+    cout << "Exiting" << endl;
+    gw.close();
 }
 
 bool loadImageFile(GBufferedImage &img) {
@@ -71,6 +129,30 @@ int scatter(Grid<int> &grid, int &r, int &c, int &radius) {
     return grid[y][x];
 }
 
+int difference(int p1, int p2) {
+    int red, green, blue;
+    GBufferedImage::getRedGreenBlue(p1, red, green, blue);
+    int _red, _green, _blue;
+    GBufferedImage::getRedGreenBlue(p2, _red, _green, _blue);
+    int rd = abs(red - _red);
+    int gd = abs(green - _green);
+    int bd = abs(blue - _blue);
+    return max(rd, max(gd, bd));
+}
+
+int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold) {
+    int pixel = grid[r][c];
+    int newPixel = WHITE;
+    for (int y = max(r-1, 0); y < min(r+2, grid.numRows()); y++) {
+        for (int x = max(c-1, 0); x < min(c+2, grid.numCols()); x++) {
+            int _pixel = grid[y][x];
+            if (difference(pixel, _pixel) >= threshold)
+                newPixel = BLACK;
+        }
+    }
+    return newPixel;
+}
+
 void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f) {
     Grid<int> newImage = Grid<int>(grid.numRows(), grid.numCols());
     for (int r = 0; r < grid.numRows(); r++) {
@@ -98,50 +180,6 @@ int filterChoice(int lower, int upper) {
             cout << "Please enter a valid option" << endl;
     }
     return choice;
-}
-
-/* This is yours to edit. Depending on how you approach your problem
- * decomposition, you will want to rewrite some of these lines, move
- * them inside loops, or move them inside helper functions, etc.
- *
- * TODO: rewrite this comment.
- */
-void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
-
-    cout << "Welcome to Fauxtoshop!" << endl;
-    gw.add(&img,0,0);
-    bool loop = true;
-    while (loop) {
-        if (!loadImageFile(img)) {
-            loop = false;
-            continue;
-        }
-        gw.setCanvasSize(img.getWidth(), img.getHeight());
-        cout << "Which image filter would you like to apply?"<< endl;
-        cout << "\t1: Scatter" << endl;
-        cout << "\t1: Edge Detection" << endl;
-        int choice = filterChoice(1, 2);
-        Grid<int> grid = img.toGrid();
-        if (choice == 1) {
-            int radius = -1;
-            while (radius < 1 || radius > 100)
-                radius = getInteger("What is your scatter radius? [1-100]");
-            auto lambda =[&radius] (Grid<int> g, int r, int c) { return scatter(g, r, c, radius); };
-            cout << "Applying scatter..." << endl;
-            applyFunc(grid, lambda);
-            img.fromGrid(grid);
-        }
-        cout << "Operation complete." << endl << endl;
-    }
-        //    GBufferedImage img2;
-//    openImageFromFilename(img2, "beyonce.jpg");
-//    img.countDiffPixels(img2);
-
-//    int row, col;
-//    getMouseClickLocation(row, col);
-//    gw.clear();
-    cout << "Exiting" << endl;
-    gw.close();
 }
 
 
@@ -226,3 +264,4 @@ Vector<double> gaussKernelForRadius(int radius) {
     }
     return kernel;
 }
+
