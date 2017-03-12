@@ -27,10 +27,10 @@ void     getMouseClickLocation(int &row, int &col);
 Vector<double> gaussKernelForRadius(int radius);
 bool loadImageFile(GBufferedImage &img, bool emptyToExit);
 int filterChoice(int lower, int upper);
-int scatter(Grid<int> &grid, int &r, int &c, int &radius);
+int scatter(const Grid<int> &grid, int &r, int &c, int &radius);
 void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f);
-int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold);
-int greenScreen(Grid<int> &oldG, Grid<int> &newG, int &r, int &c, int&y, int&x, int &threshold);
+int edgeDetection(const Grid<int> &grid, int &r, int &c, int &threshold);
+int greenScreen(const Grid<int> &oldG, const Grid<int> &newG, int &r, int &c, int&y, int&x, int &threshold);
 
 
 
@@ -106,13 +106,6 @@ void doFauxtoshop(GWindow &gw, GBufferedImage &img) {
         cout << "Operation complete." << endl << endl;
         img.fromGrid(grid);
     }
-    //    GBufferedImage img2;
-    //    openImageFromFilename(img2, "beyonce.jpg");
-    //    img.countDiffPixels(img2);
-
-    //    int row, col;
-    //    getMouseClickLocation(row, col);
-    //    gw.clear();
     cout << "Exiting" << endl;
     gw.close();
 }
@@ -125,14 +118,14 @@ bool loadImageFile(GBufferedImage &img, bool emptyToExit) {
         string fn = getLine(prompt);
         if (emptyToExit && fn.empty())
             return false;
-        success = openImageFromFilename(img, fn + ".jpg");
+        success = openImageFromFilename(img, fn);
         if (!success)
             cout << "Invalid filename entered. Try again." << endl;
     }
     return true;
 }
 
-bool inBounds(Grid<int> &img, int r, int c) {
+bool inBounds(const Grid<int> &img, int r, int c) {
     if (r < 0 || c < 0)
         return false;
     if (r >= img.numRows() || c >= img.numCols())
@@ -140,7 +133,7 @@ bool inBounds(Grid<int> &img, int r, int c) {
     return true;
 }
 
-int scatter(Grid<int> &grid, int &r, int &c, int &radius) {
+int scatter(const Grid<int> &grid, int &r, int &c, int &radius) {
     int y = randomInteger(max(r-radius,0), min(r+radius, grid.numRows()-1));
     int x = randomInteger(max(c-radius,0), min(c+radius, grid.numCols()-1));
     return grid[y][x];
@@ -157,7 +150,7 @@ int difference(int p1, int p2) {
     return max(rd, max(gd, bd));
 }
 
-int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold) {
+int edgeDetection(const Grid<int> &grid, int &r, int &c, int &threshold) {
     int pixel = grid[r][c];
     int newPixel = WHITE;
     for (int y = max(r-1, 0); y < min(r+2, grid.numRows()); y++) {
@@ -170,7 +163,7 @@ int edgeDetection(Grid<int> &grid, int &r, int &c, int &threshold) {
     return newPixel;
 }
 
-int greenScreen(Grid<int> &oldG, Grid<int> &newG, int &r, int &c, int&y, int&x, int &threshold) {
+int greenScreen(const Grid<int> &oldG, const Grid<int> &newG, int &r, int &c, int&y, int&x, int &threshold) {
     int pixel = oldG[r][c];
     if (!inBounds(newG, r-y, c-x)) return pixel;
     int newPixel = newG[r-y][c-x];
@@ -180,7 +173,7 @@ int greenScreen(Grid<int> &oldG, Grid<int> &newG, int &r, int &c, int&y, int&x, 
 }
 
 void applyFunc(Grid<int> &grid, std::function<int(Grid<int>, int, int)> f) {
-    Grid<int> newImage = Grid<int>(grid.numRows(), grid.numCols());
+    Grid<int> newImage = grid;
     for (int r = 0; r < grid.numRows(); r++) {
         for (int c = 0; c < grid.numCols(); c++) {
             newImage[r][c] = f(grid, r, c);
