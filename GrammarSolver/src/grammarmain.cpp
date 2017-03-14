@@ -24,8 +24,12 @@
 #include "simpio.h"
 #include "strlib.h"
 #include "grammarsolver.h"
+#include <map>
+
+void readFileIntoMap(std::ifstream input, std::map<string, vector<string>>);
 
 int main() {
+
     std::cout << "Welcome to CS 106X Grammar Solver!" << std::endl;
     std::cout << "I will use grammar rules to generate random" << std::endl;
     std::cout << "sentences, phrases, and expressions for you." << std::endl;
@@ -49,7 +53,7 @@ int main() {
             std::cout << std::endl;
 
             // call student's grammarGenerate function
-            Vector<std::string> result = grammarGenerate(input, symbol, times);
+            vector<std::string> result = grammarGenerate(input, symbol, times);
 
             // print the vector of results
             for (int i = 0; i < result.size(); i++) {
@@ -66,3 +70,17 @@ int main() {
     std::cout << "Exiting." << std::endl;
     return 0;
 }
+
+
+
+void readFileIntoMap(std::ifstream input, std::map<string, vector<vector<string>>>) {
+    std::string line;
+    while (std::getline(input, line))
+    {
+        std::size_t i = line.find("::=");
+        string key = line.substr(0, i);
+        string val = line.substr(i+3);
+
+    }
+}
+
