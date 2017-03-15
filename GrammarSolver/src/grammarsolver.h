@@ -23,13 +23,14 @@ using namespace std;
 #include <string>
 #include "gbufferedimage.h"
 #include "gwindow.h"
-#include "vector.h"
+//#include "vector.h"
+#include <map>
 #include <vector>
 
 // function prototype declarations
 // (If you want to declare your own helper function prototypes, do that near
 //  the top of your .cpp file, not here.  You should NOT modify this file.)
-vector<std::string> grammarGenerate(std::istream& input, std::string symbol, int times);
+vector<std::string> grammarGenerate(std::istream& input, std::string symbol, int times, map<string, vector<vector<string>>> &grammar);
 
 #endif
 

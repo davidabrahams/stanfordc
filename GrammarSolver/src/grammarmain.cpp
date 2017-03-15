@@ -24,9 +24,6 @@
 #include "simpio.h"
 #include "strlib.h"
 #include "grammarsolver.h"
-#include <map>
-
-void readFileIntoMap(std::ifstream input, std::map<string, vector<string>>);
 
 int main() {
 
@@ -38,8 +35,9 @@ int main() {
     bool play = true;
     while (play) {
         std::cout << std::endl;
-        std::ifstream input;
+        ifstream input;
         promptUserForFile(input, "Grammar file name? ");
+        map<string, vector<vector<string>>> grammar;
 
         // prompt for symbols repeatedly
         while (true) {
@@ -53,7 +51,7 @@ int main() {
             std::cout << std::endl;
 
             // call student's grammarGenerate function
-            vector<std::string> result = grammarGenerate(input, symbol, times);
+            vector<std::string> result = grammarGenerate(input, symbol, times, grammar);
 
             // print the vector of results
             for (int i = 0; i < result.size(); i++) {
@@ -70,17 +68,3 @@ int main() {
     std::cout << "Exiting." << std::endl;
     return 0;
 }
-
-
-
-void readFileIntoMap(std::ifstream input, std::map<string, vector<vector<string>>>) {
-    std::string line;
-    while (std::getline(input, line))
-    {
-        std::size_t i = line.find("::=");
-        string key = line.substr(0, i);
-        string val = line.substr(i+3);
-
-    }
-}
-
