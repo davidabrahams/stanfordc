@@ -23,7 +23,13 @@ public:
 private:
     // TODO: add specified member variable(s)
     // TODO: add any member functions necessary
-
+    PatientNode* head;
+    PatientNode* findPred(int priority);
+    PatientNode* findPred(string name);
+    PatientNode* deleteAfter(PatientNode* node);
+    void insertAfter(PatientNode* node, PatientNode* toInsert);
+    void deleteHead();
+    void newHead(PatientNode* head);
     friend ostream& operator <<(ostream& out, const PatientQueue& queue);
 };
 
