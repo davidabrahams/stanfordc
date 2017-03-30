@@ -32,4 +32,4 @@ build-*
 lib
 res
 *.pro*
-output
+out
